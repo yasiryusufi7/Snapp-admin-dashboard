@@ -1,0 +1,33 @@
+/** Palette used by the operations map — fixed per scheme, independent of app theme. */
+export const LIVE_COLORS = {
+  dark: {
+    water: '#0b1a2b',
+    land: '#0d2031',
+    block: '#122a3d',
+    road: '#1b3a55',
+    roadMajor: '#24507a',
+    zoneFill: 'rgba(26,162,143,0.07)',
+    zoneStroke: '#2a4a66',
+    zoneStrokeHover: '#1aa28f',
+    zoneLabel: '#5b7a95',
+    zoneLabelHover: '#6dd8c4',
+    route: '#1aa28f',
+    driverAvailable: '#10b981',
+    destination: '#ef4444',
+  },
+  light: {
+    water: '#dce8f2',
+    land: '#e8eef4',
+    block: '#f3f6f9',
+    road: '#ffffff',
+    roadMajor: '#ccd7e3',
+    zoneFill: 'rgba(26,162,143,0.06)',
+    zoneStroke: '#9fb8cc',
+    zoneStrokeHover: '#1aa28f',
+    zoneLabel: '#5b7288',
+    zoneLabelHover: '#128277',
+    route: '#128277',
+    driverAvailable: '#059669',
+    destination: '#dc2626',
+  },
+}
