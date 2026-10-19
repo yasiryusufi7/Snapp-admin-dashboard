@@ -4,6 +4,7 @@ import { cx } from '../../utils/classNames'
 import { NAV_SECTIONS } from '../../config/nav'
 import { useAuth } from '../../context/AuthContext'
 import { Tooltip } from '../ui/Tooltip'
+import logoMark from '../../assets/logo-mark.svg'
 
 export function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseMobile }) {
   const { can } = useAuth()
@@ -15,7 +16,7 @@ export function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseMobile
 
       <aside
         className={cx(
-          'fixed inset-y-0 left-0 z-50 flex flex-col bg-navy-900 text-white transition-[width] duration-200 lg:sticky lg:top-0 lg:h-screen',
+          'fixed inset-y-0 left-0 z-50 flex flex-col bg-navy-900 text-white shadow-xl shadow-navy-950/10 transition-[width] duration-200 lg:sticky lg:top-0 lg:h-screen',
           collapsed ? 'w-[68px]' : 'w-[250px]',
           mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
         )}
@@ -23,11 +24,11 @@ export function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseMobile
       >
         {/* Brand */}
         <div className={cx('flex h-16 shrink-0 items-center border-b border-white/8', collapsed ? 'justify-center px-2' : 'gap-3 px-4')}>
-          <img src="/src/assets/logo-mark.svg" alt="Snapp logo" className="h-8 w-8 shrink-0" />
+          <img src={logoMark} alt="Snapp logo" className="h-8 w-8 shrink-0" />
           {!collapsed && (
             <div className="min-w-0">
               <p className="truncate text-[13px] font-bold tracking-tight leading-none">Snapp<span className="ml-0.5 text-brand-300">.</span></p>
-              <p className="mt-1 text-[10px] font-medium uppercase tracking-[0.14em] text-slate-400">Operations Platform</p>
+              <p className="mt-1 text-[10px] font-medium uppercase tracking-[0.12em] text-slate-400">Operations Platform</p>
             </div>
           )}
         </div>
@@ -52,11 +53,11 @@ export function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseMobile
                         onClick={onCloseMobile}
                         className={({ isActive }) =>
                           cx(
-                            'group relative flex items-center gap-3 rounded-lg py-2 text-[13px] font-medium transition-colors duration-150',
+                            'group relative flex items-center gap-3 rounded-lg py-2.5 text-[13px] font-medium transition-colors duration-150',
                             collapsed ? 'justify-center px-0 mx-1' : 'px-2.5',
                             isActive
-                              ? 'bg-brand-300 font-semibold text-navy-950'
-                              : 'text-slate-400 hover:bg-white/6 hover:text-slate-100',
+                              ? 'bg-brand-300 font-semibold text-navy-950 shadow-sm shadow-black/10'
+                              : 'text-slate-400 hover:bg-white/[0.06] hover:text-slate-100',
                           )
                         }
                       >

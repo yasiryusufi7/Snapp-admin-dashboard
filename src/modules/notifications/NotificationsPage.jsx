@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AtSign, CalendarClock, ClipboardPlus, Megaphone, Radio, UsersRound, FileCheck2, Check, X, Eye, UserPlus } from 'lucide-react'
+import { AtSign, CalendarClock, ClipboardPlus, Megaphone, Radio, UsersRound, FileCheck2, Check, X, Eye, UserPlus, BellRing } from 'lucide-react'
 import { useAsync } from '../../hooks/useAsync'
 import { notificationService } from '../../services/notificationService'
 import { fmtDateTime, fmtNumber } from '../../utils/format'
@@ -34,7 +34,6 @@ const TYPE_TONE = {
 export default function NotificationsPage() {
   const guard = usePageGuard('notifications')
   const navigate = useNavigate()
-  if (guard) return guard
 
   const { toast } = useToast()
   const [composing, setComposing] = useState(false)
@@ -168,48 +167,48 @@ export default function NotificationsPage() {
       </div>
     ))
 
+  if (guard) return guard
+
   return (
     <div className="flex flex-col gap-4">
       <PageHeader
         title="Notifications"
-        description="Outreach to drivers and passengers: push, in-app and policy announcements."
+        description="Review driver applications and manage messages sent to your rider and driver communities."
         actions={<Button icon={Megaphone} onClick={() => setComposing(true)}>Compose broadcast</Button>}
       />
 
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4 xl:gap-4">
         <StatCard label="Total sent" value={fmtNumber(totals?.sent, { compact: true })} icon={Radio} />
         <StatCard label="Delivered" value={fmtNumber(totals?.delivered, { compact: true })} icon={AtSign} tone="green" />
         <StatCard label="Opened" value={fmtNumber(totals?.read, { compact: true })} icon={UsersRound} tone="violet" />
         <StatCard label="Overall open rate" value={`${((totals?.read || 0) / Math.max(totals?.delivered || 1)) * 100 >= 0 ? Math.round((totals?.read || 0) / Math.max(totals?.delivered || 1) * 100) : 0}%`} icon={ClipboardPlus} />
       </div>
 
-      <Card>
+      <Card className="overflow-hidden">
         <CardHeader
           icon={FileCheck2}
           title="Driver registration requests"
-          description="Applications received from the driver app — check the documents, then approve or decline."
-          actions={<Button variant="secondary" size="sm" icon={UserPlus} onClick={simulateIncoming}>Simulate incoming application</Button>}
+          description={`${registrationRows.filter((reg) => reg.status === 'pending').length} awaiting review · applications from the driver app`}
+          actions={<Button variant="secondary" size="sm" icon={UserPlus} onClick={simulateIncoming}>Add demo request</Button>}
         />
-        {sortedRegistrations.length ? <div className="divide-y divide-border">
-          {sortedRegistrations.map((reg) => <div key={reg.id} className={`flex flex-wrap items-center justify-between gap-3 px-5 py-3 ${reg.status !== 'pending' ? 'opacity-75' : ''}`}>
-            <div className="min-w-0">
-              <p className="font-semibold text-ink">{reg.name} <span className="ml-1 font-mono text-xs font-normal text-ink-faint">{reg.id}</span>{reg.status !== 'pending' && <span className="ml-2 align-middle"><StatusBadge status={STATUS.notification[reg.status]} size="sm" /></span>}</p>
-              <p className="mt-0.5 text-xs text-ink-soft">{reg.city} · {reg.area} · {reg.vehicle.brand} {reg.vehicle.type} · <span className="font-mono">{reg.vehicle.plate}</span> · {reg.documents.filter((d) => d.status === 'verified').length}/{reg.documents.length} documents verified{reg.status === 'declined' && reg.declineReason ? ` · ${reg.declineReason}` : ''}</p>
+        {sortedRegistrations.length ? <div className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-3">
+          {sortedRegistrations.map((reg) => <div key={reg.id} className={`flex min-w-0 flex-col rounded-xl border p-4 transition-colors ${reg.status === 'pending' ? 'border-brand-500/25 bg-brand-500/[0.035] hover:border-brand-500/45' : 'border-line bg-surface'}`}>
+            <div className="flex items-start justify-between gap-2"><div className="min-w-0"><p className="truncate font-semibold text-ink">{reg.name}</p><p className="mt-0.5 font-mono text-[11px] text-ink-faint">{reg.id}</p></div><StatusBadge status={STATUS.notification[reg.status]} size="sm" /></div>
+            <p className="mt-3 truncate text-xs font-medium text-ink-soft">{reg.area}, {reg.city}</p>
+            <p className="mt-1 truncate text-xs text-ink-faint">{reg.vehicle.brand} {reg.vehicle.type} · <span className="font-mono">{reg.vehicle.plate}</span></p>
+            <div className="mt-4 flex items-center justify-between gap-2 border-t border-line/70 pt-3"><span className="text-xs text-ink-soft">{reg.documents.filter((d) => d.status === 'verified').length} of {reg.documents.length} documents checked</span>
+              {reg.status === 'pending' ? <Button variant="secondary" size="sm" icon={Eye} onClick={() => { setDeclineReason('Documents failed verification.'); setSelectedRegistration(reg) }}>Review</Button> : reg.driverId ? <Button variant="ghost" size="sm" onClick={() => navigate(`/drivers/${reg.driverId}`)}>Open driver</Button> : null}
             </div>
-            {reg.status === 'pending'
-              ? <Button variant="secondary" icon={Eye} onClick={() => { setDeclineReason('Documents failed verification.'); setSelectedRegistration(reg) }}>Review request</Button>
-              : reg.driverId
-                ? <Button variant="ghost" size="sm" onClick={() => navigate(`/drivers/${reg.driverId}`)}>View driver</Button>
-                : null}
+            {reg.status === 'declined' && reg.declineReason && <p className="mt-2 text-xs text-red-600">{reg.declineReason}</p>}
           </div>)}
-        </div> : <p className="px-5 py-8 text-center text-sm text-ink-faint">No driver applications awaiting review.</p>}
+        </div> : <div className="flex flex-col items-center px-5 py-10 text-center"><span className="flex h-11 w-11 items-center justify-center rounded-full bg-surface2 text-ink-faint"><BellRing className="h-5 w-5" /></span><p className="mt-3 text-sm font-semibold text-ink">No applications yet</p><p className="mt-1 max-w-sm text-xs text-ink-faint">New driver registrations sent from the app will appear here for document review.</p></div>}
       </Card>
 
-      <Card>
+      <Card className="overflow-hidden">
         <CardHeader title="Outreach history" description="Delivery funnel per broadcast" />
-        <div className={loading ? 'animate-pulse' : ''}>
+        <div className="overflow-x-auto"><div className={loading ? 'animate-pulse' : ''}>
           {notifications?.items?.length ? columns(notifications.items) : <p className="px-5 py-10 text-center text-sm text-ink-faint">No notifications.</p>}
-        </div>
+        </div></div>
       </Card>
 
       {composing && <ComposeModal onClose={() => setComposing(false)} onCreate={create} />}

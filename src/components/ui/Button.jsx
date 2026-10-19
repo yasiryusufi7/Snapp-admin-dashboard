@@ -4,7 +4,7 @@ import { cx } from '../../utils/classNames'
 
 const VARIANTS = {
   primary:
-    'bg-brand-600 text-white shadow-sm hover:bg-brand-700 disabled:hover:bg-brand-600',
+    'bg-brand-700 text-white shadow-sm shadow-brand-900/10 hover:bg-brand-800 disabled:hover:bg-brand-700 dark:bg-brand-300 dark:text-navy-950 dark:hover:bg-brand-200 dark:disabled:hover:bg-brand-300',
   navy: 'bg-navy-800 text-white shadow-sm hover:bg-navy-900 disabled:hover:bg-navy-800 dark:bg-navy-700 dark:hover:bg-navy-800',
   secondary:
     'bg-surface text-ink border border-line hover:border-line-strong hover:bg-surface2 disabled:hover:bg-surface',
@@ -30,7 +30,7 @@ export const Button = forwardRef(function Button(
       ref={ref}
       disabled={disabled || loading}
       className={cx(
-        'focus-ring inline-flex select-none items-center justify-center rounded-lg font-semibold transition-colors duration-150',
+        'focus-ring inline-flex select-none items-center justify-center rounded-lg font-semibold transition-all duration-150 active:translate-y-px',
         'disabled:cursor-not-allowed disabled:opacity-60',
         VARIANTS[variant],
         SIZES[size],

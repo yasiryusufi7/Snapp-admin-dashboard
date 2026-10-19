@@ -34,8 +34,8 @@ export function StatCard({
     <div
       onClick={onClick}
       className={cx(
-        'card-surface group relative flex flex-col gap-2 p-4 transition-shadow',
-        onClick && 'cursor-pointer hover:shadow-lift',
+        'card-surface group relative flex flex-col gap-2.5 p-4 transition-all duration-200',
+        onClick && 'cursor-pointer hover:-translate-y-0.5 hover:border-line-strong hover:shadow-lift',
         className,
       )}
     >
@@ -43,14 +43,14 @@ export function StatCard({
 
       <div className="flex items-center justify-between gap-2">
         <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-ink-faint">
-          {Icon && <Icon className="h-3.5 w-3.5" />}
+          {Icon && <Icon className="h-4 w-4 text-brand-700 dark:text-brand-300" />}
           {label}
         </span>
         {trend && <TrendChip value={trend} />}
       </div>
 
       <div className={cx('flex items-end justify-between gap-2', variant === 'spark' && 'pr-1')}>
-        <span className={cx('font-bold tracking-tight text-ink text-tabular', variant === 'spark' ? 'text-[26px] leading-none' : 'text-2xl leading-none')}>
+        <span className={cx('font-bold tracking-tight text-ink text-tabular', variant === 'spark' ? 'text-[28px] leading-none' : 'text-[26px] leading-none')}>
           {value}
         </span>
         {variant === 'spark' && spark?.length > 0 && (

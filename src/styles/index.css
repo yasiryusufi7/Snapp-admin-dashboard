@@ -6,15 +6,15 @@
 /* Design tokens                       */
 /* ---------------------------------- */
 :root {
-  --c-canvas: 247 248 250;
+  --c-canvas: 244 247 250;
   --c-surface: 255 255 255;
-  --c-surface-2: 247 248 250;
-  --c-surface-3: 244 245 247;
-  --c-line: 232 232 232;
-  --c-line-strong: 209 209 209;
-  --c-ink: 13 13 13;
-  --c-ink-soft: 107 114 128;
-  --c-ink-faint: 156 163 175;
+  --c-surface-2: 248 250 252;
+  --c-surface-3: 240 244 248;
+  --c-line: 226 232 239;
+  --c-line-strong: 198 208 219;
+  --c-ink: 22 32 45;
+  --c-ink-soft: 84 99 116;
+  --c-ink-faint: 127 142 158;
 
   --map-water: 220 232 240;
   --map-park: 222 234 222;
@@ -23,15 +23,15 @@
 }
 
 .dark {
-  --c-canvas: 10 10 10;
-  --c-surface: 20 20 20;
-  --c-surface-2: 30 30 30;
-  --c-surface-3: 40 40 40;
-  --c-line: 42 42 42;
-  --c-line-strong: 58 58 58;
-  --c-ink: 255 255 255;
-  --c-ink-soft: 176 176 176;
-  --c-ink-faint: 136 136 136;
+  --c-canvas: 13 18 27;
+  --c-surface: 20 28 40;
+  --c-surface-2: 26 36 50;
+  --c-surface-3: 34 46 62;
+  --c-line: 43 57 74;
+  --c-line-strong: 61 78 98;
+  --c-ink: 239 244 249;
+  --c-ink-soft: 173 187 202;
+  --c-ink-faint: 132 149 167;
 
   --map-water: 16 32 48;
   --map-park: 24 40 30;
@@ -56,6 +56,7 @@ body {
   font-family: 'Outfit', system-ui, -apple-system, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  line-height: 1.45;
 }
 
 ::selection {
@@ -68,15 +69,15 @@ body {
   border-color: rgb(var(--c-line));
 }
 
-/* Hide scrollbars */
-::-webkit-scrollbar {
-  width: 0;
-  height: 0;
-}
+/* Subtle, usable scrollbars */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgb(var(--c-line-strong) / 0.75); border: 2px solid transparent; border-radius: 999px; background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background: rgb(var(--c-ink-faint) / 0.7); border: 2px solid transparent; background-clip: padding-box; }
 
 /* Focus visibility — accessible but subtle */
 :where(a, button, input, select, textarea, [tabindex]):focus-visible {
-  outline: 2px solid rgba(200, 241, 53, 0.65);
+  outline: 2px solid rgba(127, 170, 0, 0.75);
   outline-offset: 2px;
   border-radius: 3px;
 }
@@ -116,8 +117,8 @@ body {
   .card-surface {
     background-color: rgb(var(--c-surface));
     border: 1px solid rgb(var(--c-line));
-    border-radius: 0.75rem;
-    box-shadow: 0 1px 2px rgba(13, 13, 13, 0.04);
+    border-radius: 0.875rem;
+    box-shadow: 0 1px 2px rgba(21, 36, 53, 0.025), 0 3px 10px rgba(21, 36, 53, 0.025);
   }
 
   .chip {
@@ -155,4 +156,8 @@ body {
   .focus-ring {
     @apply rounded-md ring-0 focus-visible:ring-2 focus-visible:ring-brand-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--c-canvas))];
   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }

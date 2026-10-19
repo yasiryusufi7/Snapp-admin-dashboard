@@ -18,11 +18,11 @@ export default {
           900: '#1d2700',
         },
         navy: {
-          700: '#3a3a3a',
-          800: '#1e1e1e',
-          850: '#141414',
-          900: '#0a0a0a',
-          950: '#050505',
+          700: '#334155',
+          800: '#1e293b',
+          850: '#172235',
+          900: '#101827',
+          950: '#080d17',
         },
         // Theme-aware surfaces derived from CSS custom properties (RGB triplets)
         canvas: 'rgb(var(--c-canvas))',

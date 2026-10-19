@@ -9,14 +9,14 @@ export default function AdminLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-canvas">
       <Sidebar
         collapsed={collapsed}
         onToggleCollapse={() => setCollapsed((c) => !c)}
         mobileOpen={mobileOpen}
         onCloseMobile={() => setMobileOpen(false)}
       />
-      <div className="flex min-w-0 flex-1 flex-col pl-[68px] lg:pl-0">
+      <div className="flex min-w-0 flex-1 flex-col">
         <Topbar
           onOpenMobileNav={() => setMobileOpen(true)}
           onToggleSidebar={() => setCollapsed((c) => !c)}
@@ -25,7 +25,7 @@ export default function AdminLayout() {
         <main className="mx-auto w-full max-w-[1600px] flex-1 px-4 py-5 sm:px-6 lg:px-8">
           <Outlet />
         </main>
-        <footer className="flex items-center justify-between border-t border-line px-6 py-3">
+        <footer className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-t border-line px-6 py-3">
           <p className="text-[11.5px] text-ink-faint">
             © {new Date().getFullYear()} Snapp · Ride-hailing operations platform
           </p>

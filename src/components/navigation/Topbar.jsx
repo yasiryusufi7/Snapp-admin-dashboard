@@ -31,7 +31,7 @@ export function Topbar({ onOpenMobileNav, onToggleSidebar, collapsed }) {
   const title = titleForPath(location.pathname) || 'Platform'
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-3 border-b border-line bg-canvas/85 px-4 backdrop-blur">
+    <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-3 border-b border-line bg-surface/90 px-4 shadow-sm shadow-slate-900/[0.025] backdrop-blur-xl">
       {/* Mobile nav */}
       <button
         onClick={onOpenMobileNav}
@@ -54,8 +54,8 @@ export function Topbar({ onOpenMobileNav, onToggleSidebar, collapsed }) {
 
       {/* Page title */}
       <div className="min-w-0">
-        <h2 className="truncate text-[15px] font-bold tracking-tight text-ink">{title}</h2>
-        <p className="hidden text-[11px] text-ink-faint sm:block">
+        <h2 className="truncate text-[15px] font-semibold tracking-tight text-ink">{title}</h2>
+        <p className="hidden text-[11px] font-medium text-ink-faint sm:block">
           Snapp · Kabul · <span className="text-tabular">UTC+4:30</span>
         </p>
       </div>

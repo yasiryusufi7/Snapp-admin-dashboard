@@ -25,7 +25,7 @@ export const NAV_SECTIONS = [
   {
     label: 'Main',
     items: [
-      { to: '/', label: 'Dashboard', icon: LayoutDashboard, resource: 'dashboard', end: true },
+      { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, resource: 'dashboard', end: true },
       { to: '/live-operations', label: 'Live Operations', icon: Radio, resource: 'liveOps', live: true },
     ],
   },

@@ -44,11 +44,11 @@ export function DataTable({
   }
 
   const selectableCells = selectable && onSelectionChange
-  const rowPadding = density === 'compact' ? 'py-1.5' : 'py-2.5'
+  const rowPadding = density === 'compact' ? 'py-2' : 'py-3'
 
   return (
     <div className="w-full overflow-x-auto">
-      <table className="w-full border-collapse text-[13px]" style={minWidth ? { minWidth } : undefined}>
+      <table className="w-full border-collapse text-[13px] leading-5" style={minWidth ? { minWidth } : undefined}>
         <thead className={cx(stickyHeader && 'sticky top-0 z-10', 'bg-surface2', headerClassName)}>
           <tr className="text-left">
             {selectableCells && (
@@ -63,7 +63,7 @@ export function DataTable({
                   key={col.key}
                   style={col.width ? { width: col.width } : undefined}
                   className={cx(
-                    'border-b border-line px-3 font-semibold uppercase tracking-wide text-ink-faint',
+                    'border-b border-line px-3 py-3 font-semibold uppercase tracking-[0.08em] text-ink-faint',
                     'text-[11px] whitespace-nowrap',
                     col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left',
                     col.headerClassName,
