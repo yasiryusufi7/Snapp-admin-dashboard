@@ -10,6 +10,7 @@ import {
   genComplaints,
   genCampaigns,
   genNotifications,
+  genDriverRegistrations,
   genFareRules,
   genCommissionRules,
   genAudit,
@@ -47,6 +48,32 @@ function buildDatabase() {
   db.complaints = genComplaints(db.passengers, drivers, db.trips, makeRng(808))
   db.campaigns = genCampaigns(makeRng(909))
   db.notifications = genNotifications(makeRng(1010))
+  db.registrations = genDriverRegistrations(makeRng(1616))
+  db.notifications.unshift(
+    ...db.registrations.map((r) => ({
+      id: `NTC-${r.id}`,
+      kind: 'driver_registration',
+      registrationId: r.id,
+      title: `New driver registration · ${r.name}`,
+      body: `${r.licenseNo} · ${r.city} · ${r.vehicle.brand} ${r.vehicle.type} (${r.vehicle.year})`,
+      applicant: r.name,
+      city: r.city,
+      vehicleSummary: `${r.vehicle.brand} · ${r.vehicle.type}`,
+      docsTotal: r.documents.length,
+      docsVerified: r.documents.filter((d) => d.status === 'verified').length,
+      audience: 'drivers',
+      type: 'registration',
+      sent: 0,
+      delivered: 0,
+      read: 0,
+      status: r.status === 'declined' ? 'declined' : 'pending',
+      driverId: null,
+      createdAt: r.submittedAt,
+      reviewedAt: r.reviewedAt,
+      scheduledFor: null,
+      creator: 'Driver app',
+    })),
+  )
   db.fareRules = genFareRules(makeRng(1111))
   db.commissionRules = genCommissionRules(makeRng(1212))
   db.audit = genAudit(makeRng(1313))
@@ -64,6 +91,7 @@ function buildDatabase() {
   db.byPassenger = Object.fromEntries(db.passengers.map((p) => [p.id, p]))
   db.byVehicle = Object.fromEntries(vehicles.map((v) => [v.id, v]))
   db.byTrip = Object.fromEntries(db.trips.map((t) => [t.id, t]))
+  db.byRegistration = Object.fromEntries(db.registrations.map((r) => [r.id, r]))
 
   /* ------- aggregated slice metrics (visible dataset) ------- */
   const completed = db.trips.filter((t) => t.status === 'completed')

@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { AtSign, CalendarClock, ClipboardPlus, Megaphone, Radio, UsersRound } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { AtSign, CalendarClock, ClipboardPlus, Megaphone, Radio, UsersRound, FileCheck2, Check, X, Eye, UserPlus } from 'lucide-react'
 import { useAsync } from '../../hooks/useAsync'
 import { notificationService } from '../../services/notificationService'
 import { fmtDateTime, fmtNumber } from '../../utils/format'
@@ -17,7 +18,7 @@ import { MoreHorizontal } from 'lucide-react'
 import { Modal } from '../../components/ui/Modal'
 import { Field, Input, Textarea, Select } from '../../components/ui/Input'
 import { usePageGuard } from '../../components/common/PageGuard'
-import { ProgressBar } from '../../components/ui/ProgressBar'
+import { registrationService } from '../../services/registrationService'
 
 const AUDIENCE_TONE = { drivers: 'blue', passengers: 'violet', all: 'teal' }
 const TYPE_TONE = {
@@ -27,21 +28,77 @@ const TYPE_TONE = {
   operational: 'teal',
   system: 'slate',
   policy: 'red',
+  registration: 'brand',
 }
 
 export default function NotificationsPage() {
   const guard = usePageGuard('notifications')
+  const navigate = useNavigate()
   if (guard) return guard
 
   const { toast } = useToast()
   const [composing, setComposing] = useState(false)
+  const [selectedRegistration, setSelectedRegistration] = useState(null)
+  const [declineReason, setDeclineReason] = useState('Documents failed verification.')
+  const [reviewBusy, setReviewBusy] = useState(false)
 
   const { data: totals } = useAsync(() => notificationService.outreachTotals(), [])
-  const { data: notifications, loading, mutate } = useAsync(() => notificationService.list({ pageSize: 80 }), [])
+  const { data: notifications, loading, reload: reloadNotifications } = useAsync(() => notificationService.list({ pageSize: 80 }), [])
+  const { data: registrations, reload: reloadRegistrations } = useAsync(() => registrationService.list({ pageSize: 100 }), [])
+  const registrationRows = registrations?.items || []
+
+  const refreshReviews = async () => {
+    await Promise.all([reloadNotifications(), reloadRegistrations()])
+  }
+
+  const sortedRegistrations = [...registrationRows].sort(
+    (a, b) => (a.status === 'pending' ? 0 : 1) - (b.status === 'pending' ? 0 : 1) || b.submittedAt - a.submittedAt,
+  )
+
+  const simulateIncoming = async () => {
+    const reg = await registrationService.simulate()
+    await Promise.all([reloadNotifications(), reloadRegistrations()])
+    toast({ title: 'New driver registration received', description: `${reg.name} · ${reg.city} · ${reg.vehicle.brand} — awaiting document review.`, tone: 'info' })
+  }
+
+  const openRegistration = (row) => {
+    const reg = registrationRows.find((r) => r.id === row.registrationId)
+    if (!reg) {
+      toast({ title: 'Application not found', tone: 'error' })
+      return
+    }
+    if (reg.status !== 'pending') {
+      toast({ title: 'Application already handled', description: `${reg.name} · ${STATUS.notification[reg.status].label}`, tone: 'info' })
+      return
+    }
+    setDeclineReason('Documents failed verification.')
+    setSelectedRegistration(reg)
+  }
+
+  const verifyDocument = async (reg, doc) => {
+    const result = await registrationService.verifyDocument(reg.id, doc.name)
+    setSelectedRegistration((current) => current?.id === reg.id ? { ...current, documents: current.documents.map((item) => item.name === doc.name ? { ...item, status: result.status } : item) } : current)
+    await refreshReviews()
+    toast({ title: 'Document verified', description: doc.name, tone: 'success' })
+  }
+
+  const decideRegistration = async (decision) => {
+    if (!selectedRegistration || reviewBusy) return
+    setReviewBusy(true)
+    try {
+      if (decision === 'approve') await registrationService.approve(selectedRegistration.id)
+      else await registrationService.decline(selectedRegistration.id, { reason: declineReason })
+      await Promise.all([reloadNotifications(), reloadRegistrations()])
+      setSelectedRegistration(null)
+      toast({ title: decision === 'approve' ? 'Driver approved' : 'Application declined', description: decision === 'approve' ? 'The new driver is now in the Drivers tab.' : 'The application has been declined.', tone: decision === 'approve' ? 'success' : 'warning' })
+    } catch (error) {
+      toast({ title: 'Could not update application', description: error.message, tone: 'error' })
+    } finally { setReviewBusy(false) }
+  }
 
   const create = async (payload) => {
     await notificationService.create(payload)
-    mutate()
+    reloadNotifications()
     setComposing(false)
     toast({ title: payload.scheduleFor ? 'Notification scheduled' : 'Notification saved as draft', tone: 'success' })
   }
@@ -60,28 +117,53 @@ export default function NotificationsPage() {
         </div>
         <Badge tone={AUDIENCE_TONE[n.audience]}>{n.audience}</Badge>
         <Badge tone={TYPE_TONE[n.type]}>{n.type}</Badge>
-        <div>
-          <div className="mb-1 flex justify-between text-[10.5px] text-ink-faint"><span>delivered</span><span className="text-tabular">{fmtNumber(n.delivered, { compact: true })}</span></div>
-          <div className="flex gap-0.5">
-            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface3">
-              <div className="h-full rounded-full bg-brand-500" style={{ width: `${Math.min(100, delRate(n))}%` }} />
+        {n.kind === 'driver_registration' ? (
+          <div>
+            <div className="mb-1 flex justify-between text-[10.5px] text-ink-faint"><span>documents</span><span className="text-tabular">{n.docsVerified}/{n.docsTotal} verified</span></div>
+            <div className="h-1.5 overflow-hidden rounded-full bg-surface3">
+              <div className="h-full rounded-full bg-brand-500" style={{ width: `${n.docsTotal ? Math.min(100, Math.round((n.docsVerified / n.docsTotal) * 100)) : 0}%` }} />
             </div>
           </div>
-        </div>
-        <div>
-          <div className="mb-1 flex justify-between text-[10.5px] text-ink-faint"><span>opened</span><span className="text-tabular">{fmtNumber(n.read, { compact: true })}</span></div>
-          <div className="flex gap-0.5">
-            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface3">
-              <div className="h-full rounded-full bg-violet-500" style={{ width: `${Math.min(100, readRate(n))}%` }} />
+        ) : (
+          <div>
+            <div className="mb-1 flex justify-between text-[10.5px] text-ink-faint"><span>delivered</span><span className="text-tabular">{fmtNumber(n.delivered, { compact: true })}</span></div>
+            <div className="flex gap-0.5">
+              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface3">
+                <div className="h-full rounded-full bg-brand-500" style={{ width: `${Math.min(100, delRate(n))}%` }} />
+              </div>
             </div>
           </div>
-        </div>
+        )}
+        {n.kind === 'driver_registration' ? (
+          <div className="min-w-0">
+            <div className="mb-1 text-[10.5px] text-ink-faint">applicant city</div>
+            <p className="truncate text-xs font-medium text-ink-soft">{n.city}</p>
+          </div>
+        ) : (
+          <div>
+            <div className="mb-1 flex justify-between text-[10.5px] text-ink-faint"><span>opened</span><span className="text-tabular">{fmtNumber(n.read, { compact: true })}</span></div>
+            <div className="flex gap-0.5">
+              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface3">
+                <div className="h-full rounded-full bg-violet-500" style={{ width: `${Math.min(100, readRate(n))}%` }} />
+              </div>
+            </div>
+          </div>
+        )}
         <div className="text-right">
           {n.scheduledFor ? <p className="flex items-center justify-end gap-1 text-xs font-semibold text-amber-600 text-tabular"><CalendarClock className="h-3.5 w-3.5" />{fmtDateTime(n.scheduledFor)}</p> : <StatusBadge status={STATUS.notification[n.status]} size="sm" />}
         </div>
         <Menu label="Notification actions" trigger={<IconButton label="Row actions" icon={MoreHorizontal} size="sm" />}>
-          <MenuItem icon={AtSign} onClick={() => toast({ title: 'Segments', description: 'Audience targeting config will open.', tone: 'info' })}>View audience</MenuItem>
-          <MenuItem danger onClick={() => toast({ title: 'Draft queued', description: 'Notification sent to approval flow.', tone: 'info' })}>Send for approval</MenuItem>
+          {n.kind === 'driver_registration' ? (
+            <>
+              <MenuItem icon={Eye} onClick={() => openRegistration(n)}>Review application</MenuItem>
+              {n.driverId && <MenuItem icon={UsersRound} onClick={() => navigate(`/drivers/${n.driverId}`)}>View driver</MenuItem>}
+            </>
+          ) : (
+            <>
+              <MenuItem icon={AtSign} onClick={() => toast({ title: 'Segments', description: 'Audience targeting config will open.', tone: 'info' })}>View audience</MenuItem>
+              <MenuItem danger onClick={() => toast({ title: 'Draft queued', description: 'Notification sent to approval flow.', tone: 'info' })}>Send for approval</MenuItem>
+            </>
+          )}
         </Menu>
       </div>
     ))
@@ -102,13 +184,43 @@ export default function NotificationsPage() {
       </div>
 
       <Card>
+        <CardHeader
+          icon={FileCheck2}
+          title="Driver registration requests"
+          description="Applications received from the driver app — check the documents, then approve or decline."
+          actions={<Button variant="secondary" size="sm" icon={UserPlus} onClick={simulateIncoming}>Simulate incoming application</Button>}
+        />
+        {sortedRegistrations.length ? <div className="divide-y divide-border">
+          {sortedRegistrations.map((reg) => <div key={reg.id} className={`flex flex-wrap items-center justify-between gap-3 px-5 py-3 ${reg.status !== 'pending' ? 'opacity-75' : ''}`}>
+            <div className="min-w-0">
+              <p className="font-semibold text-ink">{reg.name} <span className="ml-1 font-mono text-xs font-normal text-ink-faint">{reg.id}</span>{reg.status !== 'pending' && <span className="ml-2 align-middle"><StatusBadge status={STATUS.notification[reg.status]} size="sm" /></span>}</p>
+              <p className="mt-0.5 text-xs text-ink-soft">{reg.city} · {reg.area} · {reg.vehicle.brand} {reg.vehicle.type} · <span className="font-mono">{reg.vehicle.plate}</span> · {reg.documents.filter((d) => d.status === 'verified').length}/{reg.documents.length} documents verified{reg.status === 'declined' && reg.declineReason ? ` · ${reg.declineReason}` : ''}</p>
+            </div>
+            {reg.status === 'pending'
+              ? <Button variant="secondary" icon={Eye} onClick={() => { setDeclineReason('Documents failed verification.'); setSelectedRegistration(reg) }}>Review request</Button>
+              : reg.driverId
+                ? <Button variant="ghost" size="sm" onClick={() => navigate(`/drivers/${reg.driverId}`)}>View driver</Button>
+                : null}
+          </div>)}
+        </div> : <p className="px-5 py-8 text-center text-sm text-ink-faint">No driver applications awaiting review.</p>}
+      </Card>
+
+      <Card>
         <CardHeader title="Outreach history" description="Delivery funnel per broadcast" />
         <div className={loading ? 'animate-pulse' : ''}>
-          {notifications?.length ? columns(notifications) : <p className="px-5 py-10 text-center text-sm text-ink-faint">No notifications.</p>}
+          {notifications?.items?.length ? columns(notifications.items) : <p className="px-5 py-10 text-center text-sm text-ink-faint">No notifications.</p>}
         </div>
       </Card>
 
       {composing && <ComposeModal onClose={() => setComposing(false)} onCreate={create} />}
+      {selectedRegistration && <Modal open onClose={() => setSelectedRegistration(null)} title="Review driver application" description={`${selectedRegistration.id} · submitted ${fmtDateTime(selectedRegistration.submittedAt)}`} footer={<><Button variant="secondary" onClick={() => setSelectedRegistration(null)}>Close</Button><Button variant="danger" icon={X} disabled={reviewBusy} onClick={() => decideRegistration('decline')}>Decline</Button><Button icon={Check} disabled={reviewBusy || selectedRegistration.documents.some((d) => d.status !== 'verified')} onClick={() => decideRegistration('approve')}>Approve driver</Button></>}>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3 rounded-lg bg-surface2 p-3 text-sm"><div><span className="text-ink-faint">Applicant</span><p className="font-semibold text-ink">{selectedRegistration.name}</p></div><div><span className="text-ink-faint">Contact</span><p className="text-ink">{selectedRegistration.phone}</p></div><div><span className="text-ink-faint">License</span><p className="font-mono text-ink">{selectedRegistration.licenseNo}</p></div><div><span className="text-ink-faint">Location</span><p className="text-ink">{selectedRegistration.area}, {selectedRegistration.city}</p></div><div><span className="text-ink-faint">Vehicle</span><p className="text-ink">{selectedRegistration.vehicle.brand} · {selectedRegistration.vehicle.type} · {selectedRegistration.vehicle.year}</p></div><div><span className="text-ink-faint">Plate</span><p className="font-mono text-ink">{selectedRegistration.vehicle.plate}</p></div></div>
+          <div><p className="mb-2 text-sm font-semibold text-ink">Submitted documents</p><div className="space-y-2">{selectedRegistration.documents.map((doc) => <div key={doc.name} className="flex items-center justify-between rounded-lg border border-border px-3 py-2"><div><p className="text-sm font-medium text-ink">{doc.name}</p><p className="text-xs capitalize text-ink-faint">{doc.status}</p></div>{doc.status === 'verified' ? <Badge tone="green">Verified</Badge> : <Button size="sm" variant="secondary" icon={Check} onClick={() => verifyDocument(selectedRegistration, doc)}>Mark verified</Button>}</div>)}</div></div>
+          <Field label="Decline reason"><Input value={declineReason} onChange={(e) => setDeclineReason(e.target.value)} /></Field>
+          {selectedRegistration.documents.some((d) => d.status !== 'verified') && <p className="text-xs text-amber-700">Verify every document before approving this application.</p>}
+        </div>
+      </Modal>}
     </div>
   )
 }

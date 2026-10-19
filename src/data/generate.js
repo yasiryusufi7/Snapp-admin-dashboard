@@ -734,4 +734,68 @@ function genLiveExtras(trips, drivers, passengers, rng) {
   return { requests, hotspots, alerts, inProgress }
 }
 
-export { genVehicles, genDrivers, genPassengers, genTrips, genBookings, genPayments, genSettlements, genComplaints, genCampaigns, genNotifications, genFareRules, genCommissionRules, genAudit, genExports, genLiveExtras }
+/* ------------------------------------------------------------------ */
+/* Driver registration requests (arrive from the frontend driver app)  */
+/* ------------------------------------------------------------------ */
+function genDriverRegistrations(rng) {
+  const seeds = [
+    { cityId: 'kbl', status: 'pending' },
+    { cityId: 'kbl', status: 'pending' },
+    { cityId: 'her', status: 'pending' },
+    { cityId: 'mzr', status: 'pending' },
+    { cityId: 'kdh', status: 'declined' },
+  ]
+
+  return seeds.map(({ cityId, status }, i) => {
+    const city = CITIES.find((c) => c.id === cityId)
+    const area = rng.pick(city.areas)
+    const spec = rng.pick(VEHICLE_POOL)
+    const color = rng.pick(COLORS)
+    const name = fullName(rng)
+    const plate =
+      rng.pick(['34', '06', '35', '16', '07']) +
+      ' ' +
+      rng.pick('ABCDEFGHJKLMPRSTUVYZ') +
+      ' ' +
+      String(rng.int(1, 999)).padStart(3, '0')
+    const submittedAt = NOW - rng.int(2, 96) * 3600000
+    const declined = status === 'declined'
+
+    return {
+      id: `REG-${200 + i}`,
+      name,
+      phone: phone(rng),
+      email: `${slug(name).replace(/\s+/g, '.')}@mail.com`,
+      licenseNo: `AF-${rng.int(10, 99)}-${rng.int(100000, 999999)}`,
+      experienceYears: rng.int(1, 14),
+      cityId: city.id,
+      city: city.name,
+      areaId: area.id,
+      area: area.name,
+      vehicle: {
+        brand: spec.brand,
+        type: spec.type,
+        year: spec.year,
+        color: color.name,
+        colorHex: color.hex,
+        plate,
+        seats: spec.type === 'xl' ? 7 : 4,
+      },
+      documents: [
+        { name: 'Driving License', status: rng.weighted([['pending', 78], ['review', 22]]) },
+        { name: 'Vehicle Registration', status: rng.weighted([['pending', 84], ['review', 16]]) },
+        { name: 'Insurance Certificate', status: rng.weighted([['pending', 88], ['review', 12]]) },
+        { name: 'Profile Photo', status: 'pending' },
+      ],
+      status,
+      submittedAt,
+      reviewer: declined ? 'Ahmad Karimi' : null,
+      reviewedAt: declined ? submittedAt + rng.int(1, 6) * 3600000 : null,
+      declineReason: declined ? 'Driving licence image unreadable — re-upload required.' : null,
+      driverId: null,
+      source: 'driver-app',
+    }
+  })
+}
+
+export { genVehicles, genDrivers, genPassengers, genTrips, genBookings, genPayments, genSettlements, genComplaints, genCampaigns, genNotifications, genDriverRegistrations, genFareRules, genCommissionRules, genAudit, genExports, genLiveExtras }

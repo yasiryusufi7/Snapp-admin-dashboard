@@ -114,6 +114,9 @@ export const STATUS = {
     sending: { label: 'Sending', tone: 'amber' },
     sent: { label: 'Sent', tone: 'green' },
     cancelled: { label: 'Cancelled', tone: 'red' },
+    pending: { label: 'Pending review', tone: 'amber' },
+    approved: { label: 'Approved', tone: 'green' },
+    declined: { label: 'Declined', tone: 'red' },
   },
   campaign: {
     draft: { label: 'Draft', tone: 'slate' },
